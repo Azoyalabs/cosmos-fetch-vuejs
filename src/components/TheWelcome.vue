@@ -34,7 +34,6 @@ const chainAssets = assets.find((a) => a.chain_name === REGISTRY_CHAIN_NAME)!.as
 onBeforeMount(async () => {
   if (signerStore.signer) {
     accountDatas.value = await signerStore.signer.getAccounts()
-
   }
   const client = await tendermintQueryClient.useInitializedClient();
   const { denomTraces } = await client.ibc.transfer.allDenomTraces();
