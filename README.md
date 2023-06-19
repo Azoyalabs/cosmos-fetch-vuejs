@@ -1,71 +1,46 @@
-# fetchai-vuejs
+# Fetch.ai -  Vue + TS + Vite + CosmJS template
 
-This template should help get you started developing with Vue 3 in Vite.
+This template will help get you started developing with Vue and TypeScript for the Fetch.ai cosmos-powered blockchain.
 
-## Recommended IDE Setup
+This template is tailored for learning and includes a series of explanation related to:
+- Wallet Connection
+- Bank Balances
+- Handling IBC denominations
+- Sample Tokens (CW20) queries
+- Sample NFT (CW721) queries
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin).
 
-## Type Support for `.vue` Imports in TS
+## Using this template
+This repository is a template repository and we encourage you to get started by taking ownership of the code by pressing the **Use this template** button.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin) to make the TypeScript language service aware of `.vue` types.
 
-If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has also implemented a [Take Over Mode](https://github.com/johnsoncodehk/volar/discussions/471#discussioncomment-1361669) that is more performant. You can enable it by the following steps:
-
-1. Disable the built-in TypeScript Extension
-    1) Run `Extensions: Show Built-in Extensions` from VSCode's command palette
-    2) Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
-2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
+### Project Setup
 
 ```sh
 npm install
 ```
 
+
 ### Compile and Hot-Reload for Development
 
 ```sh
-npm run dev
+npm dev
 ```
+
 
 ### Type-Check, Compile and Minify for Production
 
 ```sh
-npm run build
+npm build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
 
-```sh
-npm run test:unit
-```
+## Recommended Links
+- [cosmjs](https://github.com/cosmos/cosmjs) is the prevalent Javascript library for the Cosmos ecosystem, supporting native modules, CosmWasm smart contracts interaction as well as Tendermint interactions.
+- [This helpful gist we've put together](https://gist.github.com/MBeliou/b0e4b7d4876fd49632358466486ae6c3) will help you learn some of the most common queries you'll need for your dApps, including CW20 and CW721 interactions. 
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
 
-```sh
-# Install browsers for the first run
-npx playwright install
-
-# When testing on CI, must build the project first
-npm run build
-
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+## Looking for another framework?
+- [VueJS](https://github.com/Azoyalabs/cosmos-fetch-vuejs)
+- [Svelte](https://github.com/Azoyalabs/cosmos-fetch-svelte)
+- [React](https://github.com/Azoyalabs/cosmos-fetch-react)
