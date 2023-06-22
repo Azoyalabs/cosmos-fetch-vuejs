@@ -5,31 +5,32 @@ import ToolingIcon from './icons/IconTooling.vue'
 import EcosystemIcon from './icons/IconEcosystem.vue'
 import CommunityIcon from './icons/IconCommunity.vue'
 import BalanceList from './BalanceList.vue'
-import { useSignerStore, useQueryClient, useWasmQueryClient, useTendermintQueryClient } from '@/stores/wallet'
+import { useSignerStore, useTendermintQueryClient, useQueryStore } from '@/stores/wallet'
 import type { AccountData } from "@keplr-wallet/types"
 import { onBeforeMount, ref, type Ref, watch } from 'vue'
 import type { Coin } from '@cosmjs/stargate'
-import { assets } from 'chain-registry';
-import { CHAIN_NAME, REGISTRY_CHAIN_NAME } from '@/constants'
+import { CHAIN_NAME } from '@/constants'
 import { LUNA_CW20_ADDRESS, LUNA_CW20_OWNER_ADDRESS, FNS_NFT_ADDRESS, FNS_NFT_TOKEN_ID } from "@/constants";
 import PrimaryButtonVue from './PrimaryButton.vue'
 import type { DenomTrace } from "cosmjs-types/ibc/applications/transfer/v1/transfer";
-
+import { findAssetFromDenom } from '@/lib/utils'
+import { fetchCW721Info, fetchCW20Balance } from '@/lib/queries'
 
 /* Stores */
 const signerStore = useSignerStore();
-const queryClientStore = useQueryClient();
-const cosmwasmQueryClient = useWasmQueryClient();
 const tendermintQueryClient = useTendermintQueryClient();
+
+const queryStore = useQueryStore();
 
 
 const accountDatas: Ref<readonly AccountData[] | null> = ref(null);
 const balances: Ref<readonly Coin[] | null> = ref(null);
 const smartBalances: Ref<readonly Coin[] | null> = ref(null);
 const cw20Info: Ref<{ name: string, symbol: string, balance: number } | null> = ref(null);
-const ibcDenoms: Ref<DenomTrace[] | null> = ref(null)
-const chainAssets = assets.find((a) => a.chain_name === REGISTRY_CHAIN_NAME)!.assets;
+const ibcDenoms: Ref<DenomTrace[] | null> = ref(null);
 
+fetchCW721Info;
+fetchCW20Balance;
 
 onBeforeMount(async () => {
   if (signerStore.signer) {
@@ -42,69 +43,41 @@ onBeforeMount(async () => {
 })
 
 
-signerStore.$subscribe(async (mutation, state) => {
+signerStore.$subscribe((mutation, state) => {
   if (state.signer) {
-    accountDatas.value = await state.signer.getAccounts()
-  }
-})
-
-watch(accountDatas, async (accs) => {
-  if (accs) {
-    const initializedClient = await queryClientStore.useInitializedClient();
-    balances.value =
-      await initializedClient.getAllBalances(accs[0].address)
-
-    smartBalances.value = balances.value.map((b) => {
-      return {
-        ...
-        findAssetFromDenom(b.denom),
-        ...b
-      }
-    }).map((c) => {
-      // NOTE: chain-registry is misconfigured for atestfet
-      const decimals = c.denom_units?.find((d) => d.denom === c.display || d.denom === "testfet")?.exponent ?? 1;
-      return {
-        amount: (Math.pow(10, -decimals) * parseInt(c.amount)).toString(),
-        denom: c.display ?? c.denom
-      }
-
+    state.signer.getAccounts().then((v) => {
+      accountDatas.value = v
     })
   }
 })
 
-function findAssetFromDenom(denom: string) {
-  return chainAssets.find((c) => c.base === denom) ?? null
-}
+watch(accountDatas, (accs) => {
 
+  (async () => {
+    if (accs) {
+      const initializedClient = await queryStore.stargateClient;
+      balances.value =
+        await initializedClient.getAllBalances(accs[0].address)
 
-async function fetchCW20Balance() {
-  const client = await cosmwasmQueryClient.useInitializedClient();
+      smartBalances.value = balances.value.map((b) => {
+        return {
+          ...
+          findAssetFromDenom(b.denom),
+          ...b
+        }
+      }).map((c) => {
+        // NOTE: chain-registry is misconfigured for atestfet
+        const decimals = c.denom_units?.find((d) => d.denom === c.display || d.denom === "testfet")?.exponent ?? 1;
+        return {
+          amount: (Math.pow(10, -decimals) * parseInt(c.amount)).toString(),
+          denom: c.display ?? c.denom
+        }
 
-  const { balance }: { balance: string } = await client.queryContractSmart(LUNA_CW20_ADDRESS, {
-    "balance": {
-      "address": LUNA_CW20_OWNER_ADDRESS
+      })
     }
-  })
+  })()
 
-
-  const tokenInfo: {
-    "name": string,
-    "symbol": string,
-    "decimals": number,
-    "total_supply": string
-  }
-    = await client.queryContractSmart(LUNA_CW20_ADDRESS, {
-      "token_info": {
-      }
-    })
-
-  return {
-    name: tokenInfo.name,
-    symbol: tokenInfo.symbol,
-    balance: parseInt(balance) * Math.pow(10, -tokenInfo.decimals)
-  }
-
-}
+})
 
 let cw721Info: Ref<{
   name: string,
@@ -113,43 +86,15 @@ let cw721Info: Ref<{
   image: string,
   description: string
 } | null> = ref(null);
-async function fetchCW721Info() {
-  const client = await cosmwasmQueryClient.useInitializedClient();
-
-  const { name, symbol }: {
-    "name": string,
-    "symbol": string
-  } = await client.queryContractSmart(FNS_NFT_ADDRESS, {
-    "contract_info": {
-    }
-  })
 
 
-  const tokenInfo:
-    {
-      access: { owner: string, approvals: string[] },
-      info:
-      {
-        extension: {
-          image: string
-          description: string
-        }
-      }
-    } = await client.queryContractSmart(FNS_NFT_ADDRESS, {
-      "all_nft_info": {
-        "token_id": FNS_NFT_TOKEN_ID
-      }
-    })
-
-  return {
-    name,
-    owner: tokenInfo.access.owner,
-    symbol: symbol,
-    image: tokenInfo.info.extension.image,
-    description: tokenInfo.info.extension.description
-  }
-
+async function getCW20Balance() {
+  cw20Info.value = await fetchCW20Balance(await queryStore.wasmClient)
 }
+async function getCW721Info() {
+  cw721Info.value = await fetchCW721Info(await queryStore.wasmClient)
+}
+
 </script>
 
 <template>
@@ -253,7 +198,7 @@ async function fetchCW721Info() {
         </div>
       </div>
       <div v-else>
-        <PrimaryButtonVue @click="async () => { cw20Info = await fetchCW20Balance() }">
+        <PrimaryButtonVue @click="getCW20Balance">
           Query balance
         </PrimaryButtonVue>
       </div>
@@ -304,7 +249,7 @@ async function fetchCW721Info() {
         </div>
       </div>
       <div v-else>
-        <PrimaryButtonVue @click="async () => { cw721Info = await fetchCW721Info() }">
+        <PrimaryButtonVue @click="getCW721Info">
           Query NFT info
         </PrimaryButtonVue>
       </div>

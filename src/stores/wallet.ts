@@ -7,6 +7,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { Tendermint34Client } from '@cosmjs/tendermint-rpc'
 
+const rpc = chains.find((c) => c.chain_name === REGISTRY_CHAIN_NAME)!.apis!.rpc![0].address
+
 export const useSignerStore = defineStore('wallet', () => {
   const signer = ref<OfflineAminoSigner | null>(null)
   const isConnected = computed(() => signer.value !== null)
@@ -21,54 +23,17 @@ export const useSignerStore = defineStore('wallet', () => {
   return { signer, isConnected, connectToWallet }
 })
 
-export const useQueryClient = defineStore('queryClient', () => {
-  const queryClient = ref<StargateClient | null>(null)
+export const useQueryStore = defineStore('queryStore', () => {
+  const stargateClient = ref(StargateClient.connect(rpc))
+  const wasmClient = ref(CosmWasmClient.connect(rpc))
 
-  async function initialize() {
-    const rpc = chains.find((c) => c.chain_name === REGISTRY_CHAIN_NAME)!.apis!.rpc![0].address
-
-    queryClient.value = await StargateClient.connect(rpc)
-  }
-
-  async function useInitializedClient() {
-    if (queryClient.value) {
-      return queryClient.value
-    } else {
-      await initialize()
-      return queryClient.value!
-    }
-  }
-
-  return { useInitializedClient, initialize }
-})
-
-export const useWasmQueryClient = defineStore('wasmQueryClient', () => {
-  const queryClient = ref<CosmWasmClient | null>(null)
-
-  async function initialize() {
-    const rpc = chains.find((c) => c.chain_name === REGISTRY_CHAIN_NAME)!.apis!.rpc![0].address
-
-    queryClient.value = await CosmWasmClient.connect(rpc)
-  }
-
-  async function useInitializedClient() {
-    if (queryClient.value) {
-      return queryClient.value
-    } else {
-      await initialize()
-      return queryClient.value!
-    }
-  }
-
-  return { useInitializedClient, initialize }
+  return { stargateClient, wasmClient }
 })
 
 export const useTendermintQueryClient = defineStore('tendermintQueryClient', () => {
   const queryClient = ref<IbcExtension | null>(null)
 
   async function initialize() {
-    const rpc = chains.find((c) => c.chain_name === REGISTRY_CHAIN_NAME)!.apis!.rpc![0].address
-
     const tm = await Tendermint34Client.connect(rpc)
     queryClient.value = setupIbcExtension(new QueryClient(tm))
   }
